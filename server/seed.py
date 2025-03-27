@@ -3,14 +3,21 @@
 
 import datetime
 from app import app
-from models import db, Employee, Meeting, Project
+from models import db, Employee, Meeting, Project, Assignment, employee_meetings
 
 with app.app_context():
+    # Ensure all tables are created before seeding
+    db.create_all()
+
+    
 
     # Delete all rows in tables
+    db.session.query(employee_meetings).delete()
     Employee.query.delete()
     Meeting.query.delete()
     Project.query.delete()
+    Assignment.query.delete()
+    db.session.commit()
 
     # Add employees
     e1 = Employee(name="Uri Lee", hire_date=datetime.datetime(2022, 5, 17))
@@ -19,6 +26,7 @@ with app.app_context():
     e4 = Employee(name="Taylor Jai", hire_date=datetime.datetime(2015, 1, 2))
     db.session.add_all([e1, e2, e3, e4])
     db.session.commit()
+
 
     # Add meetings
     m1 = Meeting(topic="Software Engineering Weekly Update",
@@ -39,5 +47,40 @@ with app.app_context():
     db.session.commit()
 
     # Many-to-many relationship between employee and meeting
+     # Many-to-many relationship between employee and meeting
 
-    # Many-to-many relationship between employee and project through assignment
+    # Add meetings to an employee
+    e1.meetings.append(m1)
+    e1.meetings.append(m2)
+    # Add employees to a meeting
+    m2.employees.append(e2)
+    m2.employees.append(e3)
+    m2.employees.append(e4)
+    db.session.commit()
+
+    # Ensure employees and projects are committed before creating assignments
+    db.session.add_all([e1, e2, e3, e4])
+    db.session.commit()
+
+    db.session.add_all([p1, p2])
+    db.session.commit()
+
+    # Create assignments
+    a1 = Assignment(role='Project manager',
+                    start_date=datetime.datetime(2023, 5, 28),
+                    end_date=datetime.datetime(2023, 10, 30),
+                    employee_id=e1.id,
+                    project_id=p1.id)
+    a2 = Assignment(role='Flask programmer',
+                    start_date=datetime.datetime(2023, 6, 10),
+                    end_date=datetime.datetime(2023, 10, 1),
+                    employee_id=e2.id,
+                    project_id=p1.id)
+    a3 = Assignment(role='Flask programmer',
+                    start_date=datetime.datetime(2023, 11, 1),
+                    end_date=datetime.datetime(2024, 2, 1),
+                    employee_id=e2.id,
+                    project_id=p2.id)
+
+    db.session.add_all([a1, a2, a3])
+    db.session.commit()
